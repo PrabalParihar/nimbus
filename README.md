@@ -6,7 +6,7 @@ A comprehensive monorepo for the WeatherX League project built with Nx, featurin
 
 ```
 weatherx-league/
-├── contracts/          # Rust smart contracts
+├── contracts/          # TypeScript smart contracts (NEAR)
 ├── agent/             # TypeScript agent service
 ├── flow/              # Flow blockchain (Cadence) contracts
 ├── frontend/          # React TypeScript frontend
@@ -18,7 +18,7 @@ weatherx-league/
 ## Technologies Used
 
 - **Nx**: Monorepo management and build system
-- **Rust**: Smart contract development in `contracts/`
+- **TypeScript (near-sdk-js)**: Smart contract development in `contracts/`
 - **TypeScript**: Agent service and frontend development
 - **Cadence**: Flow blockchain smart contracts
 - **React**: Frontend user interface
@@ -48,19 +48,19 @@ npm install
 
 ## Directory Details
 
-### 🦀 contracts/ (Rust)
+### 📜 contracts/ (TypeScript)
 
-Smart contracts written in Rust with basic weather data structures.
+Smart contracts written in TypeScript using the near-sdk-js framework.
 
 **Key Files:**
-- `Cargo.toml` - Rust project configuration
-- `src/lib.rs` - Main contract library with weather data structures
+- `package.json` - Contract package configuration
+- `src/contract.ts` - Main contract implementation
 
 **Commands:**
 ```bash
 cd contracts
-cargo build
-cargo test
+npm install
+npm test
 ```
 
 ### 🚀 agent/ (TypeScript)
@@ -255,5 +255,5 @@ This project is licensed under the MIT License.
 - [ ] Add more sophisticated weather data processing
 - [ ] Implement user authentication
 - [ ] Add more comprehensive testing
-- [ ] Deploy to cloud infrastructure
-- [ ] Add CI/CD pipeline configuration 
+- [ ] Deploy to cloud infrastructure- [ ] Add CI/CD pipeline configuration
+
