@@ -248,8 +248,8 @@ export class FvmRelayService {
         this.provider
       );
 
-      const balance = await usdfc.balanceOf(address);
-      return balance;
+      const balanceBn = await usdfc.balanceOf(address);
+      return BigInt(balanceBn.toString());
 
     } catch (error) {
       this.logger.error(`Failed to get USDFC balance for ${address}:`, error);
