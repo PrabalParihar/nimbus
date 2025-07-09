@@ -64,6 +64,18 @@ export class AgentService {
   }
 
   /**
+   * Utility to enforce a timeout on promises
+   */
+  private async withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error('timeout')), ms)
+      ),
+    ]);
+  }
+
+  /**
    * Process incoming agent requests
    * @param action The action to perform
    * @param data Additional data for the action
@@ -370,45 +382,38 @@ export class AgentService {
    * Perform comprehensive health check
    */
   private async performHealthCheck(): Promise<any> {
-    const healthChecks = [];
-    
-    // Check WeatherXM service
-    try {
-      const weatherHealth = await this.weatherService.healthCheck();
-      healthChecks.push({
+    // Run external health checks concurrently with short timeouts
+    const weatherPromise = this.withTimeout(this.weatherService.healthCheck(), 3000)
+      .then(res => ({
         service: 'WeatherXM',
-        status: weatherHealth.status,
-        response_time: weatherHealth.response_time
-      });
-    } catch (error) {
-      healthChecks.push({
+        status: res.status,
+        response_time: res.response_time,
+      }))
+      .catch(err => ({
         service: 'WeatherXM',
         status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-    
-    // Check contract service
-    try {
-      await this.contractService.getStats();
-      healthChecks.push({
+        error: err instanceof Error ? err.message : String(err),
+      }));
+
+    const contractPromise = this.withTimeout(this.contractService.getStats(), 3000)
+      .then(() => ({
         service: 'Contract',
-        status: 'healthy'
-      });
-    } catch (error) {
-      healthChecks.push({
+        status: 'healthy',
+      }))
+      .catch(err => ({
         service: 'Contract',
         status: 'error',
-        error: error instanceof Error ? error.message : 'Unknown error'
-      });
-    }
-    
+        error: err instanceof Error ? err.message : String(err),
+      }));
+
+    const healthChecks = await Promise.all([weatherPromise, contractPromise]);
+
     const overallHealth = healthChecks.every(check => check.status === 'healthy') ? 'healthy' : 'degraded';
-    
+
     return {
       overall_status: overallHealth,
       services: healthChecks,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
     };
   }
 
@@ -417,5 +422,4 @@ export class AgentService {
    */
   getSupportedActions(): string[] {
     return Array.from(this.supportedActions);
-  }
-} 
+  }} 
