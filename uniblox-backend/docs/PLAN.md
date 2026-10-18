@@ -28,8 +28,9 @@ milestone. Reports derive totals from orders and coupon records without writes.
    concurrent requests, retries, conflicting keys and failure/rollback paths.
 4. Document full API, decisions, setup, AI assistance and actual verification.
 5. Review the final implementation separately; fix findings with regressions.
-   Run lint, typecheck, all tests, clean install/build/live-server smoke; archive
-   only the assignment source and its relevant development history.
+   Run lint, typecheck, all tests, clean install/build/live-server smoke. Keep
+   source, actual development commits and fresh demo evidence on the assignment
+   branch in the existing nimbus repository; no remote push.
 
 ## Review focus
 
