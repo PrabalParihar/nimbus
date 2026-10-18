@@ -120,6 +120,7 @@ function reportFrom(state: State) {
 
 export class Store {
   #state: State;
+  #mutating = false;
   readonly #config: { rewardEvery: number; discountPercent: number };
   readonly #now: () => Date;
 
@@ -132,13 +133,20 @@ export class Store {
   }
 
   // The only state publication point. The callback is private and synchronous:
-  // no await, external I/O, user callback or asynchronous payment inside it.
+  // no await, external I/O or asynchronous payment inside it. The injected
+  // clock must be synchronous; reject any reentrant mutation it attempts.
   // Clone the returned value BEFORE publication so even cloning failures roll back.
   #transaction<T>(work: (next: State) => T): T {
-    const next = structuredClone(this.#state);
-    const result = structuredClone(work(next));
-    this.#state = next;
-    return result;
+    if (this.#mutating) throw new Error('Reentrant state mutation is not allowed');
+    this.#mutating = true;
+    try {
+      const next = structuredClone(this.#state);
+      const result = structuredClone(work(next));
+      this.#state = next;
+      return result;
+    } finally {
+      this.#mutating = false;
+    }
   }
 
   listProducts(): Product[] { return structuredClone([...this.#state.products.values()]); }
@@ -211,7 +219,7 @@ export class Store {
       if (cart.items.size === 0) throw new DomainError('EMPTY_CART', 'Add an item before checking out');
       const items = quote(next, cart);
       const coupon = couponCode === undefined ? undefined : required(next.coupons.get(couponCode), 'COUPON_NOT_FOUND', 'Coupon does not exist');
-      if (coupon?.redeemedByOrderId !== null && coupon !== undefined) throw new DomainError('COUPON_REDEEMED', 'Coupon was already redeemed');
+      if (coupon && coupon.redeemedByOrderId !== null) throw new DomainError('COUPON_REDEEMED', 'Coupon was already redeemed');
       for (const item of items) {
         const product = next.products.get(item.productId)!;
         if (product.available < item.quantity) throw new DomainError('INSUFFICIENT_STOCK', 'Product no longer has enough stock', 409, { productId: item.productId, requested: item.quantity, available: product.available });

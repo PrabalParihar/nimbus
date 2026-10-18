@@ -171,3 +171,55 @@ test('rejects unsafe prices and quantities, and adds exact integer totals at sup
   assert.equal(order.totalCents, 10_000_000_000_000);
   assert.equal(store.report().netRevenueCents, order.totalCents);
 });
+
+test('a reentrant clock cannot publish a nested transaction that the outer checkout overwrites', () => {
+  let nestedCart: string | undefined;
+  const store: Store = fixture({ now: () => {
+    if (nestedCart) {
+      const target = nestedCart;
+      nestedCart = undefined;
+      store.checkout(target, 'nested');
+    }
+    return new Date('2026-01-01T00:00:00Z');
+  } });
+  const outer = cartWith(store);
+  const inner = cartWith(store);
+  const before = { products: store.listProducts(), orders: store.listOrders(), report: store.report() };
+  nestedCart = inner;
+  assert.throws(() => store.checkout(outer, 'outer'), /Reentrant state mutation/);
+  assert.deepEqual({ products: store.listProducts(), orders: store.listOrders(), report: store.report() }, before);
+  assert.equal(store.checkout(outer, 'outer').replayed, false);
+  assert.equal(store.checkout(inner, 'nested').replayed, false);
+  assert.equal(store.report().totalOrders, 2);
+});
+
+test('aggregate safe-integer capacity failures roll back the entire attempted order', () => {
+  const catalog = Array.from({ length: 100 }, (_, i) => ({ id: `p-${i}`, name: `Fictional item ${i}`, unitPriceCents: 1_000_000_000, available: 1_000_000_000 }));
+  const store = fixture({ products: catalog });
+  function largeCart() {
+    const id = store.createCart().id;
+    for (const p of catalog) store.addItem(id, p.id, 10_000);
+    return id;
+  }
+  for (let i = 0; i < 9; i++) store.checkout(largeCart(), `large-${i}`);
+  const id = largeCart();
+  const before = { products: store.listProducts(), report: store.report() };
+  assert.throws(() => store.checkout(id, 'over-capacity'), error('CAPACITY_EXCEEDED'));
+  assert.deepEqual({ products: store.listProducts(), report: store.report() }, before);
+  assert.equal(store.getCart(id).status, 'open');
+  store.setItem(id, 'p-0', 1);
+  assert.equal(store.getCart(id).items[0]?.quantity, 1);
+});
+
+test('stock changes after adding are checked at checkout; additive quantity overflow rolls back', () => {
+  const store = fixture();
+  const id = cartWith(store, 'p1', 10_000);
+  assert.throws(() => store.addItem(id, 'p1', 1));
+  assert.equal(store.getCart(id).items[0]?.quantity, 10_000);
+  store.setItem(id, 'p1', 2);
+  store.updateProduct('p1', { available: 1 });
+  assert.throws(() => store.checkout(id, 'stock-changed'), error('INSUFFICIENT_STOCK'));
+  assert.equal(store.listProducts().find(p => p.id === 'p1')?.available, 1);
+  store.setItem(id, 'p1', 1);
+  assert.equal(store.checkout(id, 'stock-changed').order.items[0]?.quantity, 1);
+});
