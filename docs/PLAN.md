@@ -1,7 +1,7 @@
 # Assignment design and execution plan
 
 Source: https://github.com/neustackapp/assignment/tree/main/be (read 2026-10-18).
-Scope: a standalone backend only. Existing WeatherX application is untouched.
+Scope: a standalone backend at the repository root. The former WeatherX application is removed through recoverable tracked deletions, with Git history preserved.
 
 ## Design
 
@@ -29,8 +29,8 @@ milestone. Reports derive totals from orders and coupon records without writes.
 4. Document full API, decisions, setup, AI assistance and actual verification.
 5. Review the final implementation separately; fix findings with regressions.
    Run lint, typecheck, all tests, clean install/build/live-server smoke. Keep
-   source, actual development commits and fresh demo evidence on the assignment
-   branch in the existing nimbus repository; no remote push.
+   source, actual development commits and fresh demo evidence at the repository
+   root on the assignment branch in the existing nimbus repository; no remote push.
 
 ## Review focus
 

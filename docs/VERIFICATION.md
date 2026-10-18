@@ -1,5 +1,7 @@
 # Verification record
 
+The checks below record the initial implementation and demo before the assignment moved to the repository root. Current verification after replacing the old application is in [ROOT-VERIFICATION.md](ROOT-VERIFICATION.md). Historical commands and paths below remain accurate for those earlier runs.
+
 Executed in the selected cloud workspace on 2026-10-18. No local computer, external payment service, credentials, customer data, paid services or public deployment were used.
 
 ## Final checks
@@ -50,7 +52,7 @@ A separate AI review pass checked transaction publication, retry identity, cart 
 
 Approximately 12 minutes of AI-assisted cloud execution through implementation, review and clean verification (starting around 11:14 UTC), plus final packaging. This is elapsed AI session work, not a claim of 4–6 hours of candidate work, human reasoning or human review. Commit authorship is explicitly Codex. The candidate must personally review, run and understand the code before submission; `DECISIONS.md` identifies a suggested walkthrough.
 
-All assignment changes are contained in `uniblox-backend/` on branch `assignment/uniblox-backend` in `/workspace/uniblox-work`, a linked worktree of the existing `/workspace/nimbus` repository. Both use `/workspace/nimbus/.git` as their shared Git directory. The original checkout remains on its original branch and unchanged. No push, PR, recruiter communication or public deployment occurred. Source and development history remain committed in the same repository, with no unrelated application changes.
+The assignment is now at the root of branch `assignment/uniblox-backend` in `/workspace/uniblox-work`, a linked worktree of the existing `/workspace/nimbus` repository. Both use `/workspace/nimbus/.git` as their shared Git directory. The former WeatherX application was removed on the assignment branch through recoverable tracked deletions; all earlier history remains. No push, PR, recruiter communication or public deployment occurred. Source and development history remain committed in the same repository.
 
 A fresh `npm run check` and `npm run smoke` passed again at approximately 11:30 UTC on 2026-10-18. [LIVE-DEMO.md](LIVE-DEMO.md) records their actual output plus a separate real HTTP demonstration: a 201 checkout, identical 200 replay, inventory 100 to 98 and a one-order report for 210 cents. It also records same-repository proof. The fresh demo did not change runtime source.
 

@@ -1,5 +1,7 @@
 # Uniblox: final tests and live API demonstration
 
+This is the original captured demo before the assignment moved to the repository root. Its commands, paths and outputs are retained verbatim as historical evidence. Current run commands use the repository root; see [ROOT-VERIFICATION.md](ROOT-VERIFICATION.md) for fresh checks after replacement.
+
 Executed: 2026-10-18T11:30:03.444802+00:00 to 2026-10-18T11:30:10.929518+00:00.
 Source commit: `f72cf07033dd5b88521f8a76697515e07c7e7753`. Working tree clean before and after.
 
@@ -557,7 +559,7 @@ stderr:
 
 The automated suite includes competing inventory and coupon checkouts, successful retry replay, same-cart checkout with different keys, global-key conflicts, milestone uniqueness, stock/coupon rollback and a late injected checkout exception. A separate AI review previously reproduced and corrected a reentrant clock callback that could overwrite a nested transaction; the regression test passes in the captured suite. This is not a claim of human review.
 
-The service remains deliberately single-process and in-memory. Restart discards its state. Authentication and real payments are out of scope. This evidence document is separate from the source archive; the final source commit was not modified.
+The service remains deliberately single-process and in-memory. Restart discards its state. Authentication and real payments are out of scope. This evidence document records the source commit tested at the time and is committed in the same repository.
 
 ## Same-repository proof
 

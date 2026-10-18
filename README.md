@@ -1,259 +1,67 @@
-# WeatherX League Monorepo
+# Uniblox checkout and rewards backend
 
-A comprehensive monorepo for the WeatherX League project built with Nx, featuring multiple technology stacks working together.
+Standalone TypeScript / Node.js service for the [public assignment](https://github.com/neustackapp/assignment/tree/main/be). It implements carts, transactional checkout, inventory, single-use milestone coupons and reconciled reporting. All five seeded products are fictional. No accounts, secrets, private services or payment integration are required.
 
-## Project Structure
+## Run
 
-```
-weatherx-league/
-├── contracts/          # TypeScript smart contracts (NEAR)
-├── agent/             # TypeScript agent service
-├── flow/              # Flow blockchain (Cadence) contracts
-├── frontend/          # React TypeScript frontend
-├── packages/          # Shared packages
-├── nx.json           # Nx configuration
-└── README.md         # This file
-```
+Use Node.js **22.13+** (verified on Node 24.19.0) and npm. Run from the repository root:
 
-## Technologies Used
-
-- **Nx**: Monorepo management and build system
-- **TypeScript (near-sdk-js)**: Smart contract development in `contracts/`
-- **TypeScript**: Agent service and frontend development
-- **Cadence**: Flow blockchain smart contracts
-- **React**: Frontend user interface
-- **Material-UI**: React component library
-
-## Getting Started
-
-### Prerequisites
-
-- Node.js (v18 or higher)
-- Rust (latest stable)
-- Flow CLI (for Cadence development)
-- npm or yarn
-
-### Installation
-
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd weatherx-league
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-## Directory Details
-
-### 📜 contracts/ (TypeScript)
-
-Smart contracts written in TypeScript using the near-sdk-js framework.
-
-**Key Files:**
-- `package.json` - Contract package configuration
-- `src/contract.ts` - Main contract implementation
-
-**Commands:**
-```bash
-cd contracts
-npm install
-npm test
-```
-
-### 🚀 agent/ (TypeScript)
-
-TypeScript-based agent service for processing weather data and contract interactions.
-
-**Key Files:**
-- `package.json` - Node.js project configuration
-- `src/index.ts` - Main server application
-- `src/services/AgentService.ts` - Core agent logic
-
-**Commands:**
-```bash
-cd agent
-npm install
-npm run build
-npm run dev      # Development mode
-npm start        # Production mode
-```
-
-**API Endpoints:**
-- `GET /health` - Health check
-- `POST /agent/process` - Process weather data or contract interactions
-
-### 🌊 flow/ (Cadence)
-
-Flow blockchain contracts written in Cadence for decentralized weather data management.
-
-**Key Files:**
-- `flow.json` - Flow project configuration
-- `contracts/WeatherXContract.cdc` - Main weather data contract
-- `transactions/SubmitWeatherData.cdc` - Submit weather data transaction
-- `scripts/GetWeatherData.cdc` - Read weather data script
-
-**Commands:**
-```bash
-cd flow
-flow emulator start
-flow project deploy --network emulator
-```
-
-### 🎨 frontend/ (React + TypeScript)
-
-Modern React frontend with Material-UI for interacting with weather data and contracts.
-
-**Key Files:**
-- `package.json` - React project configuration
-- `src/App.tsx` - Main application component
-- `src/components/WeatherDashboard.tsx` - Weather data interface
-- `src/components/ContractInteraction.tsx` - Smart contract interface
-
-**Commands:**
-```bash
-cd frontend
-npm install
-npm start        # Development server
-npm run build    # Production build
-```
-
-**Features:**
-- Weather data submission and visualization
-- Smart contract interaction interface
-- Real-time charts and statistics
-- Responsive Material-UI design
-
-## Development Workflow
-
-### Running the Full Stack
-
-1. **Start the agent service:**
-```bash
-cd agent
-npm run dev
-```
-
-2. **Start the Flow emulator (optional):**
-```bash
-cd flow
-flow emulator start
-```
-
-3. **Start the frontend:**
-```bash
-cd frontend
+```sh
+npm ci
+npm run check
+npm run smoke
 npm start
 ```
 
-4. **Build Rust contracts:**
-```bash
-cd contracts
-cargo build
+`check` runs ESLint, strict TypeScript checks, all automated tests and compilation. `smoke` launches the compiled CLI on a temporary loopback port, exercises real HTTP requests including concurrent checkout and coupon recovery, then gracefully stops it. `npm start` listens on `http://127.0.0.1:3000` by default. Use Ctrl-C to stop. `npm run dev` runs the TypeScript entry point with automatic restart.
+
+In this cloud sandbox, npm's default home cache is not writable. Use `npm ci --cache /tmp/uniblox-npm-cache` here. No global installs are needed.
+
+Configuration is optional and contains only public demo settings:
+
+| Setting | Default | Allowed |
+| --- | --- | --- |
+| `PORT` | `3000` | Integer 0–65535; 0 chooses a temporary port |
+| `HOST` | `127.0.0.1` | `127.0.0.1`, `::1`, `0.0.0.0` |
+| `REWARD_EVERY` | `5` | Integer 1–1000000 |
+| `DISCOUNT_PERCENT` | `10` | Integer 1–100 |
+
+```sh
+REWARD_EVERY=2 DISCOUNT_PERCENT=10 PORT=3001 npm start
 ```
 
-### Using Nx Commands
+Each start seeds a fresh in-memory store:
 
-Nx provides powerful commands for managing the monorepo:
+| Product ID | Fictional name | Unit cents (USD) | Stock |
+| --- | --- | ---: | ---: |
+| `notebook` | Nebula Notebook | 1299 | 50 |
+| `pen` | Comet Pen | 105 | 100 |
+| `mug` | Orbit Mug | 1895 | 20 |
+| `tote` | Lunar Tote | 2499 | 15 |
+| `limited-print` | Stardust Limited Print | 4999 | 1 |
 
-```bash
-# Generate new applications/libraries
-nx generate @nrwl/node:application new-app
+## Evaluate
 
-# Run commands across the workspace
-nx run-many --target=build --all
+See [API documentation](docs/API.md) for every endpoint, payload, response and error. A minimal checkout, replacing `CART_ID` with the fictional cart ID from the first response:
 
-# Check dependency graph
-nx dep-graph
-
-# Run tests
-nx test
+```sh
+curl -sS -X POST http://127.0.0.1:3000/carts
+curl -sS -X POST http://127.0.0.1:3000/carts/CART_ID/items \
+  -H 'Content-Type: application/json' \
+  -d '{"productId":"pen","quantity":2}'
+curl -sS -X POST http://127.0.0.1:3000/carts/CART_ID/checkout \
+  -H 'Content-Type: application/json' -H 'Idempotency-Key: demo-order-1' -d '{}'
+curl -sS http://127.0.0.1:3000/admin/report
 ```
 
-## Architecture Overview
+Repeat the identical checkout with the same key to retrieve its original order (200, no further stock change). A new key for that closed cart returns 409. After the fifth successful order under the default configuration, `POST /admin/coupons` generates the first coupon; use its `code` in the next checkout's `couponCode` field. `scripts/smoke.mjs` is a complete, runnable HTTP example without manual IDs.
 
-```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Frontend      │    │   Agent         │    │   Contracts     │
-│   (React/TS)    │◄──►│   (TypeScript)  │◄──►│   (Rust)        │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-         │                       │                       │
-         └───────────────────────┼───────────────────────┘
-                                 │
-                    ┌─────────────────┐
-                    │   Flow          │
-                    │   (Cadence)     │
-                    └─────────────────┘
-```
+## Correctness and boundaries
 
-## API Integration
+`Store.#transaction` stages all changes in a private copy and publishes once. It never yields to another request. Checkout couples inventory deductions, immutable order snapshots, coupon redemption, cart closure and the successful idempotency record. Any exception before publication discards the candidate state. A guard also rejects reentrant mutations from the injected clock.
 
-The frontend communicates with the agent service through REST API:
+This guarantees request overlap safety **within one Node.js process and one Store**. It does not provide durable storage or distributed coordination. Restart loses carts, orders, coupons and idempotency history; multiple processes would have independent stores and must not be used to serve one shop. State cloning, reporting and list responses are intentionally unbounded in history size and unsuitable for production scale. No authentication is implemented; `/admin/*` is administrative. Default listening is loopback only.
 
-```typescript
-// Weather data submission
-POST /agent/process
-{
-  "action": "weather_data",
-  "data": {
-    "temperature": 25.5,
-    "humidity": 68
-  }
-}
+See [DECISIONS.md](DECISIONS.md) for trade-offs, money rules, ambiguities, production evolution and truthful AI assistance. [Verification](docs/VERIFICATION.md) records actual outcomes and review findings. [Fresh tests and live API demo](docs/LIVE-DEMO.md) contains captured commands, HTTP responses, exit codes and same-repository proof. [Design plan](docs/PLAN.md) records the implementation scope. Start a candidate walkthrough with `src/store.ts`, then `test/store.test.ts` and `test/api.test.ts`; the candidate must review and explain the solution before submitting it.
 
-// Contract interaction
-POST /agent/process
-{
-  "action": "contract_interaction",
-  "data": {
-    "contractId": "contract-id",
-    "action": "deploy"
-  }
-}
-```
-
-## Testing
-
-Each project includes its own testing setup:
-
-```bash
-# Rust tests
-cd contracts && cargo test
-
-# TypeScript tests
-cd agent && npm test
-
-# React tests
-cd frontend && npm test
-```
-
-## Building for Production
-
-```bash
-# Build all projects
-cd contracts && cargo build --release
-cd agent && npm run build
-cd frontend && npm run build
-```
-
-## Contributing
-
-1. Create feature branches for new development
-2. Follow the existing code style and patterns
-3. Add tests for new functionality
-4. Update documentation as needed
-
-## License
-
-This project is licensed under the MIT License.
-
-## Next Steps
-
-- [ ] Implement real blockchain integration
-- [ ] Add more sophisticated weather data processing
-- [ ] Implement user authentication
-- [ ] Add more comprehensive testing
-- [ ] Deploy to cloud infrastructure- [ ] Add CI/CD pipeline configuration
-
+This assignment is the root application on branch `assignment/uniblox-backend` in the existing nimbus repository. The former WeatherX application was removed through recoverable Git-tracked deletions; its earlier commits remain in history. No push, public deployment or recruiter submission was performed. [Root verification](docs/ROOT-VERIFICATION.md) records checks after the replacement.
